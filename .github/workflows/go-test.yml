@@ -9,7 +9,8 @@ jobs:
   go-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Check out the repo
+        uses: actions/checkout@v3
 
       - name: Set up Go
         uses: actions/setup-go@v4
@@ -23,7 +24,8 @@ jobs:
   coverage:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Check out the repo
+        uses: actions/checkout@v3
 
       - name: Set up Go
         uses: actions/setup-go@v4
@@ -32,9 +34,7 @@ jobs:
           cache: true
 
       - name: Run tests and output coverage profile
-	run: |
-          go test ./... \
-          -coverprofile=coverage.txt -covermode=atomic -race
+	run: go test ./... -coverprofile=coverage.txt -covermode=atomic -race
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v3
