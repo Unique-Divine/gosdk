@@ -1,7 +1,8 @@
 name: 🧪 Tests
 
 on:
-  branch: ["main", "release/*"]
+  push: 
+    branches: ["main", "release/*"]
   pull_request:
 
 jobs:
