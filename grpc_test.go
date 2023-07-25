@@ -14,9 +14,14 @@ import (
 	serverconfig "github.com/cosmos/cosmos-sdk/server/config"
 )
 
+// --------------------------------------------------
+// GrpcClientSuite
+// --------------------------------------------------
+
 type GrpcClientSuite struct {
 	suite.Suite
 
+	gosdk    *gonibi.NibiruClient
 	grpcConn *grpc.ClientConn
 	cfg      *cli.Config
 	network  *cli.Network
@@ -80,10 +85,19 @@ func (s *GrpcClientSuite) TestNewQueryClient() {
 	s.NoError(err)
 }
 
+func (s *GrpcClientSuite) TestNewNibiruClient() {
+	_, err := gonibi.NewNibiruClient(s.cfg.ChainID, s.grpcConn)
+	s.NoError(err)
+}
+
 func (s *GrpcClientSuite) TearDownSuite() {
 	s.T().Log("tearing down integration test suite")
 	s.network.Cleanup()
 }
+
+// --------------------------------------------------
+// GrpcClientSuite_NoNetwork
+// --------------------------------------------------
 
 type GrpcClientSuite_NoNetwork struct {
 	suite.Suite
