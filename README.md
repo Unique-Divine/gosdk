@@ -14,10 +14,9 @@ A Golang client for interacting with the Nibiru blockchain.
   - [ ] write a test that sends a bank transfer.
   - [ ] write a test that submits a text gov proposal.
 - [ ] refactor: DRY improvements on the QueryClient initialization
-- [ ] ci: Add go tests to CI
-- [ ] ci: Add code coverage to CI
+- [x] ci: Add go tests to CI
+- [x] ci: Add code coverage to CI
 - [ ] ci: Add linting to CI
-- [ ] ci: Test the go build in CI
 - [ ] docs: for grpc.go
 - [ ] docs: for clients.go
 - [ ] epic: storing transaction history storage 
