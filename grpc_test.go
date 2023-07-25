@@ -75,6 +75,11 @@ func (s *GrpcClientSuite) ConnectGrpc() {
 	s.grpcConn = grpcConn
 }
 
+func (s *GrpcClientSuite) TestNewQueryClient() {
+	_, err := gonibi.NewQueryClient(s.grpcConn)
+	s.NoError(err)
+}
+
 func (s *GrpcClientSuite) TearDownSuite() {
 	s.T().Log("tearing down integration test suite")
 	s.network.Cleanup()
@@ -94,4 +99,7 @@ func (s *GrpcClientSuite_NoNetwork) TestGetGrpcConnection_NoNetwork() {
 	)
 	s.Error(err)
 	s.Nil(grpcConn)
+
+	_, err = gonibi.NewQueryClient(grpcConn)
+	s.Error(err)
 }
