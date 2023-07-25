@@ -1,7 +1,7 @@
 package gonibi_test
 
 import (
-	"gonibi"
+	"github.com/Unique-Divine/gonibi"
 	"testing"
 
 	"github.com/NibiruChain/nibiru/app"
