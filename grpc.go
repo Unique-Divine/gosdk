@@ -39,8 +39,3 @@ func GetGRPCConnection(
 
 	return conn, nil
 }
-
-// var _ NibiruClient = (*GrpcClient)(nil)
-
-// func NewGrpcClient(grpcConn *grpc.ClientConn) NibiruClient {
-// }
