@@ -17,7 +17,6 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	csdk "github.com/cosmos/cosmos-sdk/types"
-	cosmostx "github.com/cosmos/cosmos-sdk/types/tx"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 )
 
@@ -33,7 +32,6 @@ type NibiruClient struct {
 	ChainId          string
 	Keyring          keyring.Keyring
 	EncCfg           app.EncodingConfig
-	Tx               GrpcBroadcastClient
 	Querier          Querier
 	CometRPC         cmtrpcclient.Client
 	AccountRetriever authtypes.AccountRetriever
@@ -58,12 +56,9 @@ func NewNibiruClient(
 	}
 	accRetriever := authtypes.AccountRetriever{}
 	return NibiruClient{
-		ChainId: chainId,
-		Keyring: keyring,
-		EncCfg:  encCfg,
-		Tx: GrpcBroadcastClient{
-			ServiceClient: cosmostx.NewServiceClient(grpcConn),
-		},
+		ChainId:          chainId,
+		Keyring:          keyring,
+		EncCfg:           encCfg,
 		Querier:          queryClient,
 		CometRPC:         cometRpc,
 		AccountRetriever: accRetriever,
@@ -156,8 +151,4 @@ func (nc *NibiruClient) GetAccountNumbers(
 	address string,
 ) (nums AccountNumbers, err error) {
 	return GetAccountNumbers(address, nc.Querier.ClientConn, nc.EncCfg)
-}
-
-type GrpcBroadcastClient struct {
-	cosmostx.ServiceClient
 }
