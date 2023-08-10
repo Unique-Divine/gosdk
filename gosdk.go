@@ -12,27 +12,39 @@ import (
 	cmtrpcclient "github.com/cometbft/cometbft/rpc/client"
 	"google.golang.org/grpc"
 
+	"github.com/Unique-Divine/gonibi/cmdctx"
 	sdkclient "github.com/cosmos/cosmos-sdk/client"
-	sdkcodec "github.com/cosmos/cosmos-sdk/codec"
-	sdkcodectypes "github.com/cosmos/cosmos-sdk/codec/types"
+
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	csdk "github.com/cosmos/cosmos-sdk/types"
 	cosmostx "github.com/cosmos/cosmos-sdk/types/tx"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 )
 
+type INibiruClient interface {
+	BroadcastMsgs(from csdk.AccAddress, msgs ...csdk.Msg) (*csdk.TxResponse, error)
+	ClientCtx(tmCfgRootDir string) sdkclient.Context
+	GetAccountNumbers(address string) (nums AccountNumbers, err error)
+}
+
+var _ INibiruClient = (*NibiruClient)(nil)
+
 type NibiruClient struct {
 	ChainId          string
 	Keyring          keyring.Keyring
 	EncCfg           app.EncodingConfig
 	Tx               GrpcBroadcastClient
-	Query            QueryClient
+	Querier          Querier
 	CometRPC         cmtrpcclient.Client
 	AccountRetriever authtypes.AccountRetriever
 	GrpcClient       *grpc.ClientConn
 }
 
-func NewNibiruClient(chainId string, grpcConn *grpc.ClientConn, rpcEndpt string) (NibiruClient, error) {
+func NewNibiruClient(
+	chainId string,
+	grpcConn *grpc.ClientConn,
+	rpcEndpt string,
+) (NibiruClient, error) {
 	EnsureNibiruPrefix()
 	encCfg := app.MakeEncodingConfig()
 	keyring := keyring.NewInMemory(encCfg.Marshaler)
@@ -52,7 +64,7 @@ func NewNibiruClient(chainId string, grpcConn *grpc.ClientConn, rpcEndpt string)
 		Tx: GrpcBroadcastClient{
 			ServiceClient: cosmostx.NewServiceClient(grpcConn),
 		},
-		Query:            queryClient,
+		Querier:          queryClient,
 		CometRPC:         cometRpc,
 		AccountRetriever: accRetriever,
 		GrpcClient:       grpcConn,
@@ -65,12 +77,10 @@ func NewNibiruClient(chainId string, grpcConn *grpc.ClientConn, rpcEndpt string)
 //   - Validator.Dir: /node0
 //   - Validator.ClientCtx.KeyringDir: /node0/simcli
 func (nc *NibiruClient) ClientCtx(
-	keyringDir string,
 	tmCfgRootDir string,
 ) sdkclient.Context {
 	encCfg := nc.EncCfg
-	return NewClientCtx(ClientCtxBuilder{
-		KeyringDir:        keyringDir, // Not sure what to put here
+	return cmdctx.NewClientCtx(cmdctx.ClientCtxBuilder{
 		Keyring:           nc.Keyring,
 		TmCfgRootDir:      tmCfgRootDir, // Not sure what to put here
 		ChainID:           nc.ChainId,
@@ -81,32 +91,6 @@ func (nc *NibiruClient) ClientCtx(
 	})
 }
 
-type ClientCtxBuilder struct {
-	KeyringDir       string
-	Keyring          keyring.Keyring
-	TmCfgRootDir     string
-	ChainID          string
-	AccountRetriever sdkclient.AccountRetriever
-	// app.EncodingConfig.InterfaceRegistry
-	InterfaceRegistry sdkcodectypes.InterfaceRegistry
-	// app.EncodingConfig.Codec
-	Codec sdkcodec.Codec
-	// app.EncodingConfig.TxConfig
-	TxConfig sdkclient.TxConfig
-}
-
-func NewClientCtx(args ClientCtxBuilder) sdkclient.Context {
-	return sdkclient.Context{}.
-		WithKeyringDir(args.KeyringDir).
-		WithKeyring(args.Keyring).
-		WithHomeDir(args.TmCfgRootDir).
-		WithChainID(args.ChainID).
-		WithInterfaceRegistry(args.InterfaceRegistry).
-		WithCodec(args.Codec).
-		WithTxConfig(args.TxConfig).
-		WithAccountRetriever(args.AccountRetriever)
-}
-
 func EnsureNibiruPrefix() {
 	csdkConfig := csdk.GetConfig()
 	nibiruPrefix := app.AccountAddressPrefix
@@ -115,7 +99,7 @@ func EnsureNibiruPrefix() {
 	}
 }
 
-type QueryClient struct {
+type Querier struct {
 	ClientConn *grpc.ClientConn
 	Perp       xperp.QueryClient
 	Epoch      xepochs.QueryClient
@@ -125,13 +109,13 @@ type QueryClient struct {
 
 func NewQueryClient(
 	grpcConn *grpc.ClientConn,
-) (QueryClient, error) {
+) (Querier, error) {
 	if grpcConn == nil {
-		return QueryClient{}, errors.New(
+		return Querier{}, errors.New(
 			"cannot create NibiruQueryClient with nil grpc.ClientConn")
 	}
 
-	return QueryClient{
+	return Querier{
 		ClientConn: grpcConn,
 		Perp:       xperp.NewQueryClient(grpcConn),
 		Epoch:      xepochs.NewQueryClient(grpcConn),
@@ -145,8 +129,12 @@ type AccountNumbers struct {
 	Sequence uint64
 }
 
-func (nc *NibiruClient) GetAccountNumbers(address string) (nums AccountNumbers, err error) {
-	queryClient := authtypes.NewQueryClient(nc.GrpcClient)
+func GetAccountNumbers(
+	address string,
+	grpcConn *grpc.ClientConn,
+	encCfg app.EncodingConfig,
+) (nums AccountNumbers, err error) {
+	queryClient := authtypes.NewQueryClient(grpcConn)
 	resp, err := queryClient.Account(context.Background(), &authtypes.QueryAccountRequest{
 		Address: address,
 	})
@@ -156,12 +144,18 @@ func (nc *NibiruClient) GetAccountNumbers(address string) (nums AccountNumbers, 
 	// register auth interface
 
 	var acc authtypes.AccountI
-	nc.EncCfg.InterfaceRegistry.UnpackAny(resp.Account, &acc)
+	encCfg.InterfaceRegistry.UnpackAny(resp.Account, &acc)
 
 	return AccountNumbers{
 		Number:   acc.GetAccountNumber(),
 		Sequence: acc.GetSequence(),
 	}, err
+}
+
+func (nc *NibiruClient) GetAccountNumbers(
+	address string,
+) (nums AccountNumbers, err error) {
+	return GetAccountNumbers(address, nc.Querier.ClientConn, nc.EncCfg)
 }
 
 type GrpcBroadcastClient struct {
