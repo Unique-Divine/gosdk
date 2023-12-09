@@ -2,6 +2,7 @@ package gonibi
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
 
 	xwasm "github.com/CosmWasm/wasmd/x/wasm/types"
@@ -10,6 +11,7 @@ import (
 	xoracle "github.com/NibiruChain/nibiru/x/oracle/types"
 	xperp "github.com/NibiruChain/nibiru/x/perp/v2/types"
 	cmtrpcclient "github.com/cometbft/cometbft/rpc/client"
+	cmtcoretypes "github.com/cometbft/cometbft/rpc/core/types"
 	"google.golang.org/grpc"
 
 	"github.com/Unique-Divine/gonibi/cmdctx"
@@ -100,6 +102,25 @@ type Querier struct {
 	Epoch      xepochs.QueryClient
 	Oracle     xoracle.QueryClient
 	Wasm       xwasm.QueryClient
+}
+
+func (nc *NibiruClient) TxByHash(txHashHex string) (*cmtcoretypes.ResultTx, error) {
+	goCtx := context.Background()
+	txHashBz, err := TxHashHexToBytes(txHashHex)
+	if err != nil {
+		return nil, err
+	}
+	prove := true
+	res, err := nc.CometRPC.Tx(goCtx, txHashBz, prove)
+	return res, err
+}
+
+func TxHashHexToBytes(txHashHex string) ([]byte, error) {
+	return hex.DecodeString(txHashHex)
+}
+
+func TxHashBytesToHex(txHashBz []byte) (txHashHex string) {
+	return hex.EncodeToString(txHashBz)
 }
 
 func NewQueryClient(
