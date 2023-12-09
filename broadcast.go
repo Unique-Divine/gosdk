@@ -15,24 +15,20 @@ import (
 	"google.golang.org/grpc"
 )
 
-func BroadcastMsgs(
+func BroadcastMsgsWithSeq(
 	args BroadcastArgs,
 	from sdk.AccAddress,
+	seq uint64,
 	msgs ...sdk.Msg,
 ) (*sdk.TxResponse, error) {
-
-	kring := args.kring
-	txCfg := args.txCfg
-	gosdk := args.gosdk
 	broadcaster := args.Broadcaster
-	chainID := args.chainID
 
-	info, err := kring.KeyByAddress(from)
+	info, err := args.kring.KeyByAddress(from)
 	if err != nil {
 		return nil, err
 	}
 
-	txBuilder := txCfg.NewTxBuilder()
+	txBuilder := args.txCfg.NewTxBuilder()
 	err = txBuilder.SetMsgs(msgs...)
 	if err != nil {
 		return nil, err
@@ -42,19 +38,19 @@ func BroadcastMsgs(
 	txBuilder.SetFeeAmount(sdk.NewCoins(sdk.NewCoin(bondDenom, sdk.NewInt(1000))))
 	txBuilder.SetGasLimit(uint64(2 * common.TO_MICRO))
 
-	nums, err := gosdk.GetAccountNumbers(from.String())
+	nums, err := args.gosdk.GetAccountNumbers(from.String())
 	if err != nil {
 		return nil, err
 	}
 
 	var accRetriever sdkclient.AccountRetriever = authtypes.AccountRetriever{}
 	txFactory := sdkclienttx.Factory{}.
-		WithChainID(chainID).
-		WithKeybase(kring).
-		WithTxConfig(txCfg).
+		WithChainID(args.chainID).
+		WithKeybase(args.kring).
+		WithTxConfig(args.txCfg).
 		WithAccountRetriever(accRetriever).
 		WithAccountNumber(nums.Number).
-		WithSequence(nums.Sequence)
+		WithSequence(seq)
 
 	overwriteSig := true
 	err = sdkclienttx.Sign(txFactory, info.Name, txBuilder, overwriteSig)
@@ -62,12 +58,24 @@ func BroadcastMsgs(
 		return nil, err
 	}
 
-	txBytes, err := txCfg.TxEncoder()(txBuilder.GetTx())
+	txBytes, err := args.txCfg.TxEncoder()(txBuilder.GetTx())
 	if err != nil {
 		return nil, err
 	}
 
 	return broadcaster.BroadcastTxSync(txBytes)
+}
+
+func BroadcastMsgs(
+	args BroadcastArgs,
+	from sdk.AccAddress,
+	msgs ...sdk.Msg,
+) (*sdk.TxResponse, error) {
+	nums, err := args.gosdk.GetAccountNumbers(from.String())
+	if err != nil {
+		return nil, err
+	}
+	return BroadcastMsgsWithSeq(args, from, nums.Sequence, msgs...)
 }
 
 type Broadcaster interface {
@@ -135,34 +143,54 @@ type BroadcastArgs struct {
 	chainID     string
 }
 
+func initBroadcastArgs(
+	nc *NibiruClient, broadcaster Broadcaster,
+) (args BroadcastArgs) {
+	txConfig := nc.EncCfg.TxConfig
+	return BroadcastArgs{
+		kring:       nc.Keyring,
+		txCfg:       txConfig,
+		gosdk:       *nc,
+		Broadcaster: broadcaster,
+		rpc:         nc.CometRPC,
+		chainID:     nc.ChainId,
+	}
+}
+
 func (nc *NibiruClient) BroadcastMsgs(
 	from sdk.AccAddress,
 	msgs ...sdk.Msg,
 ) (*sdk.TxResponse, error) {
-	txConfig := nc.EncCfg.TxConfig
-	args := BroadcastArgs{
-		kring:       nc.Keyring,
-		txCfg:       txConfig,
-		gosdk:       *nc,
-		Broadcaster: BroadcasterTmRpc{RPC: nc.CometRPC},
-		rpc:         nc.CometRPC,
-		chainID:     nc.ChainId,
-	}
+	broadcaster := BroadcasterTmRpc{RPC: nc.CometRPC}
+	args := initBroadcastArgs(nc, broadcaster)
 	return BroadcastMsgs(args, from, msgs...)
+}
+
+func (nc *NibiruClient) BroadcastMsgsWithSeq(
+	from sdk.AccAddress,
+	seq uint64,
+	msgs ...sdk.Msg,
+) (*sdk.TxResponse, error) {
+	broadcaster := BroadcasterTmRpc{RPC: nc.CometRPC}
+	args := initBroadcastArgs(nc, broadcaster)
+	return BroadcastMsgsWithSeq(args, from, seq, msgs...)
 }
 
 func (nc *NibiruClient) BroadcastMsgsGrpc(
 	from sdk.AccAddress,
 	msgs ...sdk.Msg,
 ) (*sdk.TxResponse, error) {
-	txConfig := nc.EncCfg.TxConfig
-	args := BroadcastArgs{
-		kring:       nc.Keyring,
-		txCfg:       txConfig,
-		gosdk:       *nc,
-		Broadcaster: BroadcasterGrpc{GRPC: nc.Querier.ClientConn},
-		rpc:         nc.CometRPC,
-		chainID:     nc.ChainId,
-	}
+	broadcaster := BroadcasterGrpc{GRPC: nc.Querier.ClientConn}
+	args := initBroadcastArgs(nc, broadcaster)
 	return BroadcastMsgs(args, from, msgs...)
+}
+
+func (nc *NibiruClient) BroadcastMsgsGrpcWithSeq(
+	from sdk.AccAddress,
+	seq uint64,
+	msgs ...sdk.Msg,
+) (*sdk.TxResponse, error) {
+	broadcaster := BroadcasterGrpc{GRPC: nc.Querier.ClientConn}
+	args := initBroadcastArgs(nc, broadcaster)
+	return BroadcastMsgsWithSeq(args, from, seq, msgs...)
 }

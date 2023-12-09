@@ -110,7 +110,7 @@ func (nc *NibiruClient) TxByHash(txHashHex string) (*cmtcoretypes.ResultTx, erro
 	if err != nil {
 		return nil, err
 	}
-	prove := false
+	prove := true
 	res, err := nc.CometRPC.Tx(goCtx, txHashBz, prove)
 	return res, err
 }

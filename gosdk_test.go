@@ -20,6 +20,8 @@ import (
 // NibiruClientSuite
 // --------------------------------------------------
 
+var _ suite.SetupAllSuite = (*NibiruClientSuite)(nil)
+
 type NibiruClientSuite struct {
 	suite.Suite
 
@@ -38,6 +40,8 @@ func (s *NibiruClientSuite) RPCEndpoint() string {
 	return s.val.RPCAddress
 }
 
+// SetupSuite implements the suite.SetupAllSuite interface. This function runs
+// prior to all of the other tests in the suite.
 func (s *NibiruClientSuite) SetupSuite() {
 	nibiru, err := gonibi.CreateBlockchain(s.T())
 	s.NoError(err)
@@ -77,6 +81,7 @@ func (s *NibiruClientSuite) TestNewNibiruClient() {
 		s.DoTestBroadcastMsgs()
 	})
 	s.T().Run("DoTestBroadcastMsgsGrpc", func(t *testing.T) {
+		s.NoError(s.network.WaitForNextBlock())
 		s.DoTestBroadcastMsgsGrpc()
 	})
 }
@@ -88,34 +93,41 @@ func (s *NibiruClientSuite) UsefulPrints() {
 	fmt.Printf("s.val.ClientCtx.KeyringDir: %v\n", s.val.ClientCtx.KeyringDir)
 }
 
-func (s *NibiruClientSuite) DoTestBroadcastMsgs() {
-	from := s.val.Address
-	to := testutil.AccAddress()
-	amt := sdk.NewCoins(sdk.NewInt64Coin(denoms.NIBI, 420))
-	txResp, err := s.gosdk.BroadcastMsgs(
-		from,
-		banktypes.NewMsgSend(from, to, amt),
-	)
-	s.NoError(err)
+func (s *NibiruClientSuite) AssertTxResponseSuccess(txResp *sdk.TxResponse) (txHashHex string) {
 	s.NotNil(txResp)
 	s.EqualValues(txResp.Code, 0)
+	return txResp.TxHash
+}
+func (s *NibiruClientSuite) msgSendVars() (from, to sdk.AccAddress, amt sdk.Coins, msgSend sdk.Msg) {
+	from = s.val.Address
+	to = testutil.AccAddress()
+	amt = sdk.NewCoins(sdk.NewInt64Coin(denoms.NIBI, 420))
+	msgSend = banktypes.NewMsgSend(from, to, amt)
+	return from, to, amt, msgSend
 }
 
-func (s *NibiruClientSuite) DoTestBroadcastMsgsGrpc() {
-	s.NoError(s.network.WaitForNextBlock())
-	from := s.val.Address
-	to := testutil.AccAddress()
-	amt := sdk.NewCoins(sdk.NewInt64Coin(denoms.NIBI, 420))
-	txResp, err := s.gosdk.BroadcastMsgsGrpc(
-		from,
-		banktypes.NewMsgSend(from, to, amt),
+func (s *NibiruClientSuite) DoTestBroadcastMsgs() (txHashHex string) {
+	from, _, _, msgSend := s.msgSendVars()
+	txResp, err := s.gosdk.BroadcastMsgs(
+		from, msgSend,
 	)
 	s.NoError(err)
-	s.NotNil(txResp)
+	return s.AssertTxResponseSuccess(txResp)
+}
+
+func (s *NibiruClientSuite) DoTestBroadcastMsgsGrpc() (txHashHex string) {
+	from, _, _, msgSend := s.msgSendVars()
+	txResp, err := s.gosdk.BroadcastMsgsGrpc(
+		from, msgSend,
+	)
+	s.NoError(err)
+	txHashHex = s.AssertTxResponseSuccess(txResp)
+
 	base := 10
 	var txRespCode string = strconv.FormatUint(uint64(txResp.Code), base)
 	s.EqualValuesf(txResp.Code, 0,
 		"code: %v\nraw log: %s", txRespCode, txResp.RawLog)
+	return txHashHex
 }
 
 func (s *NibiruClientSuite) TearDownSuite() {
