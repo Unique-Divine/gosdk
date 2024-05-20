@@ -2,8 +2,6 @@ module github.com/NibiruChain/nibiru/gosdk
 
 go 1.21
 
-toolchain go1.22.0
-
 require (
 	github.com/CosmWasm/wasmd v0.44.0
 	github.com/NibiruChain/nibiru v1.3.0
