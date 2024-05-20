@@ -2,8 +2,6 @@ module github.com/NibiruChain/nibiru/gosdk
 
 go 1.21
 
-toolchain go1.22.0
-
 require (
 	github.com/CosmWasm/wasmd v0.44.0
 	github.com/NibiruChain/nibiru v1.3.0
@@ -193,7 +191,7 @@ require (
 replace (
 	cosmossdk.io/api => cosmossdk.io/api v0.3.1
 
-	github.com/NibiruChain/nibiru/gosdk => .
+	github.com/NibiruChain/nibiru/gosdk => ./
 	github.com/cosmos/iavl => github.com/cosmos/iavl v0.20.0
 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
 )
