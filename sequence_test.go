@@ -9,13 +9,12 @@ import (
 
 func (s *NibiruClientSuite) TestSequenceExpectations() {
 	s.T().Log("Get sequence and block")
-	block, err := s.network.LatestHeight()
+	_, err := s.network.LatestHeight()
 	s.NoError(err)
 
 	// Go to next block
-	block += 1
 	s.NoError(s.network.WaitForNextBlock())
-	// TODO: "WaitForNextBlock" should probably return the block height
+	// TODO: test: "WaitForNextBlock" should probably return the block height
 
 	accAddr := s.val.Address
 	getLatestAccNums := func() gosdk.AccountNumbers {
@@ -35,7 +34,7 @@ func (s *NibiruClientSuite) TestSequenceExpectations() {
 	seqs := []uint64{}
 	txResults := make(map[string]*cmtcoretypes.ResultTx)
 	for broadcastCount := uint64(0); broadcastCount < numTxs; broadcastCount++ {
-		s.network.WaitForNextBlock()
+		s.NoError(s.network.WaitForNextBlock())
 		from, _, _, msgSend := s.msgSendVars()
 		txResp, err := s.gosdk.BroadcastMsgsGrpcWithSeq(
 			from,

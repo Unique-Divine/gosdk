@@ -160,7 +160,9 @@ func GetAccountNumbers(
 	// register auth interface
 
 	var acc authtypes.AccountI
-	encCfg.InterfaceRegistry.UnpackAny(resp.Account, &acc)
+	if err := encCfg.InterfaceRegistry.UnpackAny(resp.Account, &acc); err != nil {
+		return nums, err
+	}
 
 	return AccountNumbers{
 		Number:   acc.GetAccountNumber(),

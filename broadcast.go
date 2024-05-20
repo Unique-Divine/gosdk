@@ -82,8 +82,10 @@ type Broadcaster interface {
 	BroadcastTxSync(txBytes []byte) (*sdk.TxResponse, error)
 }
 
-var _ Broadcaster = (*BroadcasterTmRpc)(nil)
-var _ Broadcaster = (*BroadcasterGrpc)(nil)
+var (
+	_ Broadcaster = (*BroadcasterTmRpc)(nil)
+	_ Broadcaster = (*BroadcasterGrpc)(nil)
+)
 
 type BroadcasterTmRpc struct {
 	RPC cmtrpc.Client
@@ -92,7 +94,6 @@ type BroadcasterTmRpc struct {
 func (b BroadcasterTmRpc) BroadcastTxSync(
 	txBytes []byte,
 ) (*sdk.TxResponse, error) {
-
 	respRaw, err := b.RPC.BroadcastTxSync(context.Background(), txBytes)
 	if err != nil {
 		return nil, err
@@ -134,10 +135,10 @@ func (b BroadcasterGrpc) BroadcastTxAsync(
 // }
 
 type BroadcastArgs struct {
-	kring       keyring.Keyring
-	txCfg       sdkclient.TxConfig
-	gosdk       NibiruClient
-	clientCtx   sdkclient.Context
+	kring keyring.Keyring
+	txCfg sdkclient.TxConfig
+	gosdk NibiruClient
+	// clientCtx   sdkclient.Context // TODO: implement
 	Broadcaster Broadcaster
 	rpc         cmtrpc.Client
 	chainID     string

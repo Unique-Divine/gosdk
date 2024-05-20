@@ -39,12 +39,10 @@ func TestCreateSigner(t *testing.T) {
 			require.NoError(t, err)
 		})
 	}
-
 }
 
 func TestKeyring(t *testing.T) {
 	require.NotPanics(t, func() {
 		_ = gosdk.NewKeyring()
 	})
-
 }

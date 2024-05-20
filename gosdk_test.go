@@ -98,6 +98,7 @@ func (s *NibiruClientSuite) AssertTxResponseSuccess(txResp *sdk.TxResponse) (txH
 	s.EqualValues(txResp.Code, 0)
 	return txResp.TxHash
 }
+
 func (s *NibiruClientSuite) msgSendVars() (from, to sdk.AccAddress, amt sdk.Coins, msgSend sdk.Msg) {
 	from = s.val.Address
 	to = testutil.AccAddress()
