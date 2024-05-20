@@ -1,10 +1,16 @@
-# gonibi
+# Nibiru Go SDK - NibiruChain/nibiru/gosdk
 
 A Golang client for interacting with the Nibiru blockchain.
 
 --- 
 
 ## Dev Notes
+
+### Finalizing "v1"
+
+- [ ] Write usage examples
+- [ ] Create a quick start guide
+- [ ] Migrate to the [Nibiru repo](https://github.com/NibiruChain/nibiru) and archive this one.
 
 ### Mini Sprint
 
@@ -25,6 +31,6 @@ A Golang client for interacting with the Nibiru blockchain.
 
 ### Question Brain-dump
 
-- Q: Should gonibi run as a binary? -> Yes. What should it be able to do?
+- Q: Should gosdk run as a binary? -> No.
 - Q: Which functionality warrants localnet testing?
 - Q: Should there be a way to run queries with JSON-RPC 2 instead of GRPC?

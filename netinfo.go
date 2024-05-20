@@ -1,4 +1,4 @@
-package gonibi
+package gosdk
 
 type NetworkInfo struct {
 	GrpcEndpoint      string

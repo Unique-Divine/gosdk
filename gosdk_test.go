@@ -1,14 +1,14 @@
-package gonibi_test
+package gosdk_test
 
 import (
 	"fmt"
 	"strconv"
 	"testing"
 
+	"github.com/NibiruChain/nibiru/gosdk"
 	"github.com/NibiruChain/nibiru/x/common/denoms"
 	"github.com/NibiruChain/nibiru/x/common/testutil"
 	"github.com/NibiruChain/nibiru/x/common/testutil/cli"
-	"github.com/Unique-Divine/gonibi"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 
@@ -25,7 +25,7 @@ var _ suite.SetupAllSuite = (*NibiruClientSuite)(nil)
 type NibiruClientSuite struct {
 	suite.Suite
 
-	gosdk    *gonibi.NibiruClient
+	gosdk    *gosdk.NibiruClient
 	grpcConn *grpc.ClientConn
 	cfg      *cli.Config
 	network  *cli.Network
@@ -43,7 +43,7 @@ func (s *NibiruClientSuite) RPCEndpoint() string {
 // SetupSuite implements the suite.SetupAllSuite interface. This function runs
 // prior to all of the other tests in the suite.
 func (s *NibiruClientSuite) SetupSuite() {
-	nibiru, err := gonibi.CreateBlockchain(s.T())
+	nibiru, err := gosdk.CreateBlockchain(s.T())
 	s.NoError(err)
 	s.network = nibiru.Network
 	s.cfg = nibiru.Cfg
@@ -53,7 +53,7 @@ func (s *NibiruClientSuite) SetupSuite() {
 
 func ConnectGrpcToVal(val *cli.Validator) (*grpc.ClientConn, error) {
 	grpcUrl := val.AppConfig.GRPC.Address
-	return gonibi.GetGRPCConnection(
+	return gosdk.GetGRPCConnection(
 		grpcUrl, true, 5,
 	)
 }
@@ -66,13 +66,13 @@ func (s *NibiruClientSuite) ConnectGrpc() {
 }
 
 func (s *NibiruClientSuite) TestNewQueryClient() {
-	_, err := gonibi.NewQueryClient(s.grpcConn)
+	_, err := gosdk.NewQueryClient(s.grpcConn)
 	s.NoError(err)
 }
 
 func (s *NibiruClientSuite) TestNewNibiruClient() {
 	rpcEndpt := s.val.RPCAddress
-	gosdk, err := gonibi.NewNibiruClient(s.cfg.ChainID, s.grpcConn, rpcEndpt)
+	gosdk, err := gosdk.NewNibiruClient(s.cfg.ChainID, s.grpcConn, rpcEndpt)
 	s.NoError(err)
 	s.gosdk = &gosdk
 
@@ -148,12 +148,12 @@ func TestNibiruClientSuite_NoNetwork_RunAll(t *testing.T) {
 }
 
 func (s *NibiruClientSuite_NoNetwork) TestGetGrpcConnection_NoNetwork() {
-	grpcConn, err := gonibi.GetGRPCConnection(
-		gonibi.DefaultNetworkInfo.GrpcEndpoint, true, 2,
+	grpcConn, err := gosdk.GetGRPCConnection(
+		gosdk.DefaultNetworkInfo.GrpcEndpoint, true, 2,
 	)
 	s.Error(err)
 	s.Nil(grpcConn)
 
-	_, err = gonibi.NewQueryClient(grpcConn)
+	_, err = gosdk.NewQueryClient(grpcConn)
 	s.Error(err)
 }

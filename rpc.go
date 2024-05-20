@@ -1,4 +1,4 @@
-package gonibi
+package gosdk
 
 import (
 	cmtrpc "github.com/cometbft/cometbft/rpc/client"

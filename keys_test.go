@@ -1,9 +1,9 @@
-package gonibi_test
+package gosdk_test
 
 import (
 	"testing"
 
-	"github.com/Unique-Divine/gonibi"
+	"github.com/NibiruChain/nibiru/gosdk"
 	"github.com/stretchr/testify/require"
 )
 
@@ -25,9 +25,9 @@ func TestCreateSigner(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.testName, func(t *testing.T) {
-			kring := gonibi.NewKeyring()
+			kring := gosdk.NewKeyring()
 			keyName := ""
-			signer, privKey, err := gonibi.CreateSigner(tc.mnemonic, kring, keyName)
+			signer, privKey, err := gosdk.CreateSigner(tc.mnemonic, kring, keyName)
 			if tc.expectErr {
 				require.Error(t, err)
 				return
@@ -35,7 +35,7 @@ func TestCreateSigner(t *testing.T) {
 			require.NoError(t, err)
 			require.NotNil(t, signer.PubKey)
 
-			err = gonibi.AddSignerToKeyring(kring, privKey, privKey.PubKey().String())
+			err = gosdk.AddSignerToKeyring(kring, privKey, privKey.PubKey().String())
 			require.NoError(t, err)
 		})
 	}
@@ -43,9 +43,8 @@ func TestCreateSigner(t *testing.T) {
 }
 
 func TestKeyring(t *testing.T) {
-
 	require.NotPanics(t, func() {
-		_ = gonibi.NewKeyring()
+		_ = gosdk.NewKeyring()
 	})
 
 }

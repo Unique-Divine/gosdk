@@ -1,4 +1,4 @@
-package gonibi
+package gosdk
 
 import (
 	"context"

@@ -1,20 +1,20 @@
-package gonibi
+package gosdk
 
 import (
 	"context"
 	"encoding/hex"
 	"errors"
+	"fmt"
 
 	xwasm "github.com/CosmWasm/wasmd/x/wasm/types"
 	"github.com/NibiruChain/nibiru/app"
 	xepochs "github.com/NibiruChain/nibiru/x/epochs/types"
 	xoracle "github.com/NibiruChain/nibiru/x/oracle/types"
-	xperp "github.com/NibiruChain/nibiru/x/perp/v2/types"
 	cmtrpcclient "github.com/cometbft/cometbft/rpc/client"
 	cmtcoretypes "github.com/cometbft/cometbft/rpc/core/types"
 	"google.golang.org/grpc"
 
-	"github.com/Unique-Divine/gonibi/cmdctx"
+	"github.com/NibiruChain/nibiru/gosdk/cmdctx"
 	sdkclient "github.com/cosmos/cosmos-sdk/client"
 
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
@@ -98,7 +98,6 @@ func EnsureNibiruPrefix() {
 
 type Querier struct {
 	ClientConn *grpc.ClientConn
-	Perp       xperp.QueryClient
 	Epoch      xepochs.QueryClient
 	Oracle     xoracle.QueryClient
 	Wasm       xwasm.QueryClient
@@ -107,6 +106,8 @@ type Querier struct {
 func (nc *NibiruClient) TxByHash(txHashHex string) (*cmtcoretypes.ResultTx, error) {
 	goCtx := context.Background()
 	txHashBz, err := TxHashHexToBytes(txHashHex)
+	fmt.Printf("txHashBz: %v\n", txHashBz)
+	fmt.Printf("txHashHex: %v\n", txHashHex)
 	if err != nil {
 		return nil, err
 	}
@@ -133,7 +134,6 @@ func NewQueryClient(
 
 	return Querier{
 		ClientConn: grpcConn,
-		Perp:       xperp.NewQueryClient(grpcConn),
 		Epoch:      xepochs.NewQueryClient(grpcConn),
 		Oracle:     xoracle.NewQueryClient(grpcConn),
 		Wasm:       xwasm.NewQueryClient(grpcConn),
